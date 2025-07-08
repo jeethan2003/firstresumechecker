@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Quality Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dropzone {
+            border: 2px dashed #6b7280;
+            transition: all 0.3s ease;
+        }
+        .dropzone-active {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        .highlight-box {
+            position: relative;
+            border-left: 4px solid #4f46e5;
+        }
+        .highlight-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(79, 70, 229, 0.05);
+            z-index: -1;
+        }
+        .issue-tag {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ef4444;
+            color: white;
+            border-radius: 9999px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Resume Quality Checker</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Upload your resume to check for grammar, spelling, and formatting issues. Get professional suggestions to improve your resume instantly.
+            </p>
+        </header>
+
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+            <div class="p-8">
+                <!-- Upload Section -->
+                <div id="upload-section">
+                    <div id="dropzone" class="dropzone rounded-lg p-12 text-center cursor-pointer">
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <h3 class="text-xl font-semibold text-gray-800">Upload Your Resume</h3>
+                            <p class="text-gray-500">Drag & drop your resume file here or click to browse</p>
+                            <input type="file" id="file-input" class="hidden" accept=".pdf,.doc,.docx,.txt">
+                            <button id="browse-btn" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">Browse Files</button>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2 text-center">Supported formats: PDF, DOC, DOCX, TXT (max 5MB)</p>
+                </div>
+
+                <!-- Processing Section (Hidden Initially) -->
+                <div id="processing-section" class="hidden p-8 text-center">
+                    <div class="animate-pulse flex flex-col items-center justify-center">
+                        <div class="h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Analyzing Your Resume</h3>
+                        <p class="text-gray-500 max-w-md">Checking for grammatical errors, formatting issues, and content optimization opportunities...</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-6 max-w-md">
+                            <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section (Hidden Initially) -->
+                <div id="results-section" class="hidden">
+                    <!-- Summary Card -->
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500">Analyzed file: <span class="font-medium" id="filename-display">resume.pdf</span></p>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg p-6 mb-8 highlight-box">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-2xl font-bold text-gray-900">Analysis Summary</h3>
+                            <span class="px-3 py-1 rounded-full text-sm font-medium" id="score-badge">Good</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                            <div class="border border-gray-100 p-4 rounded-lg">
+                                <div class="text-3xl font-bold text-indigo-600 mb-1" id="grammar-issues">2</div>
+                                <div class="text-gray-600">Grammar Issues</div>
+                            </div>
+                            <div class="border border-gray-100 p-4 rounded-lg">
+                                <div class="text-3xl font-bold text-indigo-600 mb-1" id="formatting-issues">3</div>
+                                <div class="text-gray-600">Formatting Issues</div>
+                            </div>
+                            <div class="border border-gray-100 p-4 rounded-lg">
+                                <div class="text-3xl font-bold text-indigo-600 mb-1" id="content-suggestions">5</div>
+                                <div class="text-gray-600">Content Suggestions</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details Section -->
+                    <div class="mt-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4">Detailed Analysis</h3>
+                        
+                        <!-- Issues List -->
+                        <div id="issues-container" class="space-y-4">
+                            <!-- Sample issues will be populated by JavaScript -->
+                        </div>
+                        
+                        <!-- Corrected Resume Download -->
+                        <div class="mt-10 p-6 bg-indigo-50 rounded-lg">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-1">Your Improved Resume Is Ready</h4>
+                                    <p class="text-gray-600">Download your corrected resume with all suggested improvements applied.</p>
+                                </div>
+                                <button id="download-btn" class="mt-4 md:mt-0 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Download Improved Resume
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            const browseBtn = document.getElementById('browse-btn');
+            const uploadSection = document.getElementById('upload-section');
+            const processingSection = document.getElementById('processing-section');
+            const resultsSection = document.getElementById('results-section');
+            const progressBar = document.getElementById('progress-bar');
+            const issuesContainer = document.getElementById('issues-container');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            // Sample grammatical issues - in a real app these would come from an API
+            const sampleIssues = [
+                {
+                    type: 'grammar',
+                    severity: 'critical',
+                    message: 'Resume lacks measurable achievements',
+                    example: 'Instead of: "Responsible for project management"\nTry: "Managed 5 projects with $2M budget, delivering 15% under budget"',
+                    location: 'Work Experience section'
+                },
+                {
+                    type: 'grammar',
+                    severity: 'moderate',
+                    message: 'Dates formatted inconsistently',
+                    example: 'Found: "Jan 2020 - Present" and "03/2019 - 12/2019"\nRecommend: "Month YYYY" format throughout',
+                    location: 'Work History dates'
+                },
+                {
+                    type: 'grammar',
+                    severity: 'minor',
+                    message: 'Missing article in skills section',
+                    example: 'Incorrect: "Experience with JavaScript"\nCorrect: "Experience with JavaScript" (no correction needed, just stylistic)',
+                    location: 'Skills section, line 2'
+                },
+                {
+                    type: 'formatting',
+                    severity: 'major',
+                    message: 'Inconsistent date formatting in work history',
+                    example: 'Some dates use MM/YYYY format while others use Month YYYY',
+                    location: 'Work History section'
+                },
+                {
+                    type: 'formatting',
+                    severity: 'moderate',
+                    message: 'Font sizes vary between sections',
+                    example: 'Headers are inconsistent in size',
+                    location: 'Throughout document'
+                },
+                {
+                    type: 'content',
+                    severity: 'suggestion',
+                    message: 'Consider adding metrics to quantify achievements',
+                    example: 'Instead of "Increased sales", try "Increased sales by 25% in Q2 2023"',
+                    location: 'First work experience bullet'
+                },
+                {
+                    type: 'content',
+                    severity: 'suggestion',
+                    message: 'Summary section could be more impactful',
+                    example: 'Consider starting with a strong action verb and key skills',
+                    location: 'Summary section'
+                }
+            ];
+
+            // Handle drag and drop events
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropzone.classList.add('dropzone-active');
+            }
+
+            function unhighlight() {
+                dropzone.classList.remove('dropzone-active');
+            }
+
+            dropzone.addEventListener('drop', handleDrop, false);
+            browseBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFiles);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles({ target: { files } });
+            }
+
+            function handleFiles(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (validateFile(file)) {
+                        processFile(file);
+                    }
+                }
+            }
+
+            function validateFile(file) {
+                const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload a valid file type (PDF, DOC, DOCX, or TXT)');
+                    return false;
+                }
+                
+                if (file.size > maxSize) {
+                    alert('File size exceeds 5MB limit');
+                    return false;
+                }
+                
+                return true;
+            }
+
+            function processFile(file) {
+                // In a real app, we would upload the file to a server for processing
+                // Here we'll simulate processing with a progress bar
+                uploadSection.classList.add('hidden');
+                processingSection.classList.remove('hidden');
+                
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress > 100) progress = 100;
+                    progressBar.style.width = `${progress}%`;
+                    
+                    if (progress === 100) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            showResults(file.name);
+                        }, 500);
+                    }
+                }, 200);
+            }
+
+            function showResults(filename) {
+                processingSection.classList.add('hidden');
+                resultsSection.classList.remove('hidden');
+                document.getElementById('filename-display').textContent = filename;
+                
+                // Update the score badge based on issues
+                const grammarCount = sampleIssues.filter(i => i.type === 'grammar').length;
+                const formatCount = sampleIssues.filter(i => i.type === 'formatting').length;
+                
+                let scoreText = 'Excellent';
+                let badgeClass = 'bg-green-100 text-green-800';
+                
+                if (grammarCount + formatCount > 5) {
+                    scoreText = 'Needs Work';
+                    badgeClass = 'bg-red-100 text-red-800';
+                } else if (grammarCount + formatCount > 2) {
+                    scoreText = 'Fair';
+                    badgeClass = 'bg-yellow-100 text-yellow-800';
+                }
+                
+                document.getElementById('score-badge').textContent = scoreText;
+                document.getElementById('score-badge').className = `px-3 py-1 rounded-full text-sm font-medium ${badgeClass}`;
+                
+                // Update issue counts
+                document.getElementById('grammar-issues').textContent = grammarCount;
+                document.getElementById('formatting-issues').textContent = formatCount;
+                document.getElementById('content-suggestions').textContent = sampleIssues.filter(i => i.type === 'content').length;
+                
+                // Populate issues list
+                issuesContainer.innerHTML = '';
+                sampleIssues.forEach((issue, index) => {
+                    let severityColor = 'bg-blue-100 text-blue-800';
+                    if (issue.severity === 'major') severityColor = 'bg-red-100 text-red-800';
+                    if (issue.severity === 'moderate') severityColor = 'bg-yellow-100 text-yellow-800';
+                    
+                    const issueEl = document.createElement('div');
+                    issueEl.className = 'p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition relative';
+                    
+                    let typeText = 'Grammar Issue';
+                    if (issue.type === 'formatting') typeText = 'Formatting Issue';
+                    if (issue.type === 'content') typeText = 'Content Suggestion';
+                    
+                    issueEl.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 mt-1">
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${severityColor}">
+                                    ${issue.severity.charAt(0).toUpperCase() + issue.severity.slice(1)}
+                                </span>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-lg font-medium text-gray-900">${issue.message}</h4>
+                                <p class="text-sm text-gray-500 mt-1">Location: ${issue.location}</p>
+                                <div class="mt-2 bg-gray-50 p-3 rounded text-sm">
+                                    <p class="font-medium">Example:</p>
+                                    <p class="font-mono">${issue.example.replace(/\n/g, '<br>')}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    issuesContainer.appendChild(issueEl);
+                });
+            }
+
+            // Handle download button click
+            downloadBtn.addEventListener('click', () => {
+                // Generate a simple text resume with corrections applied
+                const sampleResume = `Professional Resume
+            
+Name: [Your Name]
+Contact: [Your Email] | [Your Phone]
+
+SUMMARY:
+Adaptable professional with [X] years of experience in [your field]. 
+${sampleIssues.find(i => i.location === 'Summary section')?.example || 'Skilled in various professional competencies'}
+
+WORK EXPERIENCE:
+[Your Most Recent Position]
+${sampleIssues.find(i => i.location.includes('Work Experience'))?.example || '- Contributed to team success through [specific achievements]'}
+
+SKILLS:
+${sampleIssues.find(i => i.location.includes('Skills section'))?.example || '- Technical skills relevant to your field'}`;
+
+                // Create and trigger download
+                const blob = new Blob([sampleResume], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'improved_resume.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                // Clean up
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
+
